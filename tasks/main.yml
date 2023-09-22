@@ -1,2 +1,24 @@
 ---
 # tasks file for debops-gpgkey
+
+- import_role:
+    name: juju4.gpgkey_generate
+    tasks_from: gpgkey_generate
+  vars:
+    gpg_generator_user: "{{ gpgkey__generate_as }}"
+    # gpg_home is the directory .gnupg is created in, NOT .gnupg itself
+    gpg_home: "{{ gpgkey__generate_home }}"
+    gpg_user: "{{ gpgkey__export_prefix }}"
+    gpg_realname: "{{ gpgkey__generate_realname }}"
+    gpg_useremail: "{{ gpgkey__generate_email }}"
+    gpg_passphrase: "{{ gpgkey__generate_passphrase }}"
+    gpg_passphrase_file: "{{ gpgkey__generate_passphrase_file }}"
+    gpg_expire: "{{ gpgkey__generate_expiry }}"
+    gpg_pull: "{{ gpgkey__retrieve_keys }}"
+    gpg_pull_privatekey: "{{ gpgkey__retrieve_keys }}"
+    gpg_pulldir: "{{ gpgkey__retrieve_target }}"
+    gpg_no_log: "{{ debops__no_log |default(true) }}"
+    gpg_pubkeyfileexport: "{{ gpgkey__export_public_key_name }}"
+    gpg_privkeyfile: "{{ gpgkey__export_private_key_name }}"
+    gpg_fingerprint: "{{ gpgkey__export_fingerprint_name }}"
+
