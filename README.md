@@ -1,38 +1,79 @@
-Role Name
-=========
+debops-gpgkey
+=============
 
-A brief description of the role goes here.
+Wrap up `juju4.gpgkey_generate` to ease integration with DebOps.
 
-Requirements
-------------
+This role takes the multi layered variables used by DebOps and processes them down to pass in to `gpgkey_generate` so it can create the keys.
 
-Any pre-requisites that may not be covered by Ansible itself or the role should be mentioned here. For instance, if the role uses the EC2 module, it may be a good idea to mention in this section that the boto package is required.
+Known problems
+--------------
+
+* Requires three custom branches present in https://github.com/medeopolis/ansible-gpgkey_generate (they are currently being upstreamed)
+* Doesn't support generating multiple keys in one pass (not currently required for our usecase and sacrificed for expedience)
+
 
 Role Variables
 --------------
 
-A description of the settable variables for this role should go here, including any variables that are in defaults/main.yml, vars/main.yml, and any variables that can/should be set via parameters to the role. Any variables that are read from other roles and/or the global scope (ie. hostvars, group vars, etc.) should be mentioned here as well.
+```
+# Which user will be used while generating the key
+gpgkey__generate_as: 'root'
+# Where `.gnupg` will be created; could be home directory of the user
+# generating the key
+gpgkey__generate_home: "~{{ gpgkey__generate_as }}/"
+# Notionally user generating key; prefixed on key filenames during export
+gpgkey__export_prefix: "{{ gpgkey__generate_as }}"
+# String ("Real name") to associate with key
+gpgkey__generate_realname: "GPG key generated via Ansible"
+# Email address to associate with key
+gpgkey__generate_email: "{{ gpgkey__generate_as }}@{{ inventory_hostname }}"
+# File to store passphrase in
+gpgkey__generate_passphrase_path: "{{ secret + '/credentials/' + inventory_hostname + '/gpg/' }}"
+gpgkey__generate_passphrase_file: 'passphrase.key'
+# Passphrase to use. Created if it isn't set
+gpgkey__generate_passphrase: "{{ lookup('password', gpgkey__generate_passphrase_path + gpgkey__generate_passphrase_file ) }}"
+
+# Default key lifetime
+gpgkey__generate_expiry: '5y'
+# Pull exports of generated keys back to the controller
+gpgkey__retrieve_keys: true
+gpgkey__retrieve_target: "{{ secret + '/gpg/by-host/' + inventory_hostname }}"
+# Filenames for exported GPG keys
+gpgkey__export_public_key_name: "{{ gpgkey__generate_realname }}-export.pub"
+gpgkey__export_private_key_name: "{{ gpgkey__generate_realname }}-export.priv"
+gpgkey__export_fingerprint_name: "{{ gpgkey__generate_realname }}.finterprint"
+```
+
 
 Dependencies
 ------------
 
-A list of other roles hosted on Galaxy should go here, plus any details in regards to parameters that may need to be set for other roles, or variables that are used from other roles.
+- Requires juju4.gpgkey_generate (which does all the work)
+- Requires DebOps to be in use, core and PKI
+
 
 Example Playbook
 ----------------
 
-Including an example of how to use your role (for instance, with variables passed in as parameters) is always nice for users too:
+Playbook including two essential debops roles (core and PKI). Some vars are
+included for illustrative purposes.
 
-    - hosts: servers
+    - name: Generate GPG keys using defaults
+      hosts: debops_service_duply
+      become: true
+      become_user: root
+      vars:
+        gpgkey__generate_home: "{{ pki_root }}/gpg/"
+        gpgkey__generate_realname: "Generated for backups"
+        gpgkey__generate_email: "noreply+{{ inventory_hostname_short }}@example.com"
       roles:
-         - { role: username.rolename, x: 42 }
+        - role: debops.debops.core
+        - role: debops.debops.pki
+        - role: medeopolis.debops-gpgkey
+
 
 License
 -------
 
-BSD
+GPLv3
 
-Author Information
-------------------
-
-An optional section for the role authors to include contact information, or a website (HTML is not allowed).
