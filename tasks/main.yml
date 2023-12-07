@@ -1,7 +1,8 @@
 ---
 # tasks file for debops-gpgkey
 
-- import_role:
+- name: Import GPG key generation tasks
+  import_role:
     name: juju4.gpgkey_generate
     tasks_from: gpgkey_generate
   vars:
